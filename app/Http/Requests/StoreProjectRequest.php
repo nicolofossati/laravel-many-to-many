@@ -30,7 +30,8 @@ class StoreProjectRequest extends FormRequest
             'completion_date' => "required|max:30",
             'client' => "required|max:50",
             'category' => "required|max:50",
-            'type_id' => "nullable|exists:types,id"
+            'type_id' => "nullable|exists:types,id",
+            'technologies' => "exists:technologies,id"
         ];
     }
 }

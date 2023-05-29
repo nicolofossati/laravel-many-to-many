@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Project;
+use App\Models\Technology;
 use App\Models\Type;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -31,7 +32,8 @@ class ProjectController extends Controller
     public function create()
     {
         $types = Type::all();
-        return view('admin.project.create', compact('types'));
+        $technologies = Technology::all();
+        return view('admin.project.create', compact('types', 'technologies'));
     }
 
     /**
@@ -42,10 +44,21 @@ class ProjectController extends Controller
      */
     public function store(StoreProjectRequest $request)
     {
+
         $data = $request->validated();
         $data['slug'] = Str::slug($request->title, '-');
 
+
+        $checkPost = Project::where('slug', $data['slug'])->first();
+        if ($checkPost) {
+            return back()->withInput()->withErrors(['slug' => 'Impossibile creare lo slug per questo post, cambia il titolo']);
+        }
+
         $newProject = Project::create($data);
+
+        if ($request->has('technologies')) {
+            $newProject->technologies()->attach($request->technologies);
+        }
 
         $newProject->save();
 
@@ -72,7 +85,8 @@ class ProjectController extends Controller
     public function edit(Project $project)
     {
         $types = Type::all();
-        return view('admin.project.edit', compact('project', 'types'));
+        $technologies = Technology::all();
+        return view('admin.project.edit', compact('project', 'types', 'technologies'));
     }
 
     /**
@@ -86,6 +100,14 @@ class ProjectController extends Controller
     {
         $data = $request->validated();
         $data['slug'] = Str::slug($request->title, '-');
+
+        $checkPost = Project::where('slug', $data['slug'])->where('id', '<>', $project->id)->first();
+
+        if ($checkPost) {
+            return back()->withInput()->withErrors(['slug' => 'Impossibile creare lo slug']);
+        }
+
+        $project->technologies()->sync($request->technologies);
 
         $project->update($data); //permette l'update
 
